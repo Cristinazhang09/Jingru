@@ -1,0 +1,136 @@
+---
+title: "Housing Data"
+author: "Jingru Zhang"
+date: "4/25/2020"
+output: word_document
+---
+
+# Analysis of the housing data in R
+## The answers of part a.
+```{r}
+library(readxl)
+housing <- data.frame(read_excel("D:/Downloads/week-7-housing.xlsx"))
+str(housing)
+housing_clean <- housing[, c("Sale.Price","sq_ft_lot", "bedrooms", "bath_full_count")]
+head(housing_clean)
+
+```
+
+## The answers of part b.
+```{r}
+mod1 <- lm(Sale.Price ~ sq_ft_lot, data = housing_clean, na.action = na.exclude)
+mod2 <- lm(Sale.Price ~ bedrooms + bath_full_count, data = housing_clean, na.action = na.exclude)
+nrow(housing_clean)
+```
+
+## The answers of part c.
+```{r}
+summary(mod1)
+summary(mod2)
+```
+
+R2: It is the amount of variation in the outcome variable that is accounted for by the model from the samples.
+Adjust R2: It indicates the loss of predictive power or shrinkage. It is the amount of variance in the outcome variable would be accounted for if the model derived from the population where the samples were taken from.
+In model 1, Square Foot of Lot accounts for 1.435% of the variation in the Sale Price. The model derived form the population would account for 1.428% of variance in the Sale Price. In model 2, Bedrooms and Full Bath Count account for 10.23% of the variation in the Sale Price. The model derived form the population account for 10.22% of the variance in the Sale Price. Thus, addtional predictors help explaining more variations in Sale Price.
+
+## The answers of part d.
+```{r cars}
+library(QuantPsyc)
+lm.beta(mod2)
+sd(housing_clean$Sale.Price)
+sd(housing_clean$bedrooms)
+sd(housing_clean$bath_full_count)
+```
+
+Standardized betas for each parameter indicate when the Full Bath Count is held constant, if the Bedrooms increases 1 standard deviation 0.8761273, the sale price will increase by $61824.94(404381.1* 0.1528878). Similarly, when the Bedrooms is held constant, if Full Bath Count increases by 1 standard deviation 0.6507965, the sale price will increase by $96355.73(404381.1* 0.2382795).
+
+## The answers of part e.
+```{r pressure, echo=FALSE}
+confint(mod2)
+```
+
+In this model the interval for bedrooms and bath_full_count are large, indicating that the parameter for these variables are less representative, but neverthless significant.
+ 
+## The answers of part f.
+I chose the formula in the book for F change, the result is 110.84, which means the change in the amount of variance that can be explained is significant, F(1, 12863)=110.84, p<0.001. And this change statistics indicates the difference between the two models.
+
+## The answers of part g.
+```{r}
+housing_clean$residuals <- resid(mod2)
+housing_clean$standardized.residuals <- rstandard(mod2)
+housing_clean$studentized.residuals <- rstudent(mod2)
+housing_clean$cooks.distance <- cooks.distance(mod2)
+housing_clean$dfbeta <- dfbeta(mod2)
+housing_clean$dffit <- dffits(mod2)
+housing_clean$leverage <- hatvalues(mod2)
+housing_clean$covariance.ratios <- covratio(mod2)
+
+```
+
+## The answers of part h.
+```{r}
+housing_clean$large.residual <- housing_clean$standardized.residuals > 2 |housing_clean$standardized.residuals < -2
+
+```
+
+## The answers of part i.
+```{r}
+sum(housing_clean$large.residual)
+```
+
+## The answers of part j.
+```{r}
+housing_clean[housing_clean$large.residual,c("Sale.Price", "sq_ft_lot", "bedrooms", "bath_full_count", "standardized.residuals")]
+```
+
+## The answers of part k.
+```{r}
+library(tidyverse)
+data <- housing_clean[housing_clean$large.residual, c("cooks.distance", "leverage", "covariance.ratios")] 
+
+data1 <- rownames_to_column(data, var='id') %>% as_tibble()
+data1 %>%
+  filter(cooks.distance > 1)
+
+data1 %>%
+  filter(leverage > 0.0007)
+
+data1 %>%
+  filter(covariance.ratios > 1.00047 | covariance.ratios < 0.99953)
+
+```
+
+Cook's distance larger than 1 indicates the case that might be infulencing the model. I found one case 295. And I use three times the average value 3(k + 1)/n = 0.0007 as the cut-off point, there are some cases above this value. Specifically, the case 295, is larger than this three times average a lot. For covriance ratio, using the formula in the book, I found CVRi > 1.00047, CVRi < 0.99953. Except for case 295, most cases have CVR calues within or just outside these boundaies. Thus, only the 295 case needs to be concerned.
+
+## The answers of part l.
+```{r}
+library(car)
+dwt(mod2)
+```
+
+The value is 0.71677, less than 1, so it need be concerned. The test statistic can vary from 0 to 4, with a value of 2 meaning the residuals are uncorrelted, and a value less than 2 indicates a positive correlation. So this condtion is not met. 
+
+## The answers of part m.
+```{r}
+vif(mod2)
+1/vif(mod2)
+mean(vif(mod2))
+```
+
+For the current model the VIFs are all below 10 and the tolerance statistics are all above 0.2. And averange VIF is close to 1. Thus, there is no collinearity within our data.
+
+## The answers of part n.
+```{r}
+plot(mod2)
+```
+
+From the plot of Residuals v.s. Fitted, the shape of the scattered points looks like a funnel, points become more spread out across the graph, indicating the heteroscedasticity. For the Q-Q plot, if the points lie on the line, it represents a normal distribution. But for the current plot, the points deviate from line, which means the residuals deviate from normality.
+
+```{r}
+hist(housing_clean$studentized.residuals)
+```
+
+The distribution is not normal.
+
+## The answers of part n.
+This regression model is not unbiased, because the assumption of independence, linearity and homoscedasticity are not met.
