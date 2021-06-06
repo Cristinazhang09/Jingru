@@ -1,3 +1,4 @@
+# Project Name: Omaha Housing Price
 
 The purpose of my project is to use real world house information to predict the house prices. My dataset is collected by scrapping the house information from Zillow.com. This project uses Multiple Linear Regression, Support Vector Regression and Random Forest Regression. The performance of three models were compared using metrics of mean squared error and R-squared value.
 
