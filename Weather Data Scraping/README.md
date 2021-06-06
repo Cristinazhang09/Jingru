@@ -1,4 +1,4 @@
-
+# Project Name: Weather Data Scraping
 This program interacts with the OpenWeatherMap service, and print out the weather information for the city based ZipCode or city name.
 
 ## Installation
